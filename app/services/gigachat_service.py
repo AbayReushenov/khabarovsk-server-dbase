@@ -9,6 +9,7 @@ import os
 import base64
 import requests
 import urllib3
+import uuid
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 import asyncio
@@ -72,7 +73,7 @@ class GigaChatService:
             return self._access_token
 
         try:
-            # Prepare OAuth request
+            # Prepare OAuth request according to official Sber documentation
             if self.client_auth_key:
                 # Use pre-encoded auth key
                 auth_string = self.client_auth_key
@@ -82,22 +83,25 @@ class GigaChatService:
                 auth_string = base64.b64encode(f"{self.client_id}:{self.client_secret}".encode()).decode()
                 app_logger.info("Using client_id:client_secret encoding")
 
+            # Generate unique RqUID as required by Sber documentation
+            rq_uid = str(uuid.uuid4())
+
             headers = {
-                "Authorization": f"Basic {auth_string}",
                 "Content-Type": "application/x-www-form-urlencoded",
-                "RqUID": f"forecast-{int(datetime.now().timestamp())}",
-                "Accept": "application/json"
+                "Accept": "application/json",
+                "RqUID": rq_uid,
+                "Authorization": f"Basic {auth_string}"
             }
 
-            data = {
-                "grant_type": "client_credentials",
+            # According to Sber docs: only scope in payload, no grant_type
+            payload = {
                 "scope": self.scope
             }
 
             app_logger.info("Requesting new GigaChat access token")
             app_logger.debug(f"Auth URL: {self.auth_url}")
             app_logger.debug(f"Scope: {self.scope}")
-            app_logger.debug(f"Grant Type: {data['grant_type']}")
+            app_logger.debug(f"RqUID: {rq_uid}")
 
             # Add retry logic for rate limiting
             max_retries = 3
@@ -105,7 +109,8 @@ class GigaChatService:
 
             for attempt in range(max_retries):
                 try:
-                    response = self.session.post(self.auth_url, headers=headers, data=data, timeout=60)
+                    # Use data= instead of json= as per Sber documentation
+                    response = self.session.post(self.auth_url, headers=headers, data=payload, timeout=60)
 
                     app_logger.debug(f"Token response status: {response.status_code}")
                     app_logger.debug(f"Token response headers: {dict(response.headers)}")
