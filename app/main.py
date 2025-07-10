@@ -32,8 +32,10 @@ async def lifespan(app: FastAPI):
     # Test database connection on startup
     try:
         from app.services.supabase_client import supabase_client
-        supabase_client.execute_query("SELECT 1", fetch=True)
-        app_logger.info("Database connection established")
+        if supabase_client.health_check():
+            app_logger.info("Database connection established")
+        else:
+            app_logger.warning("Database health check failed")
     except Exception as e:
         app_logger.error(f"Database connection failed: {e}")
         # Don't stop the app, but log the error

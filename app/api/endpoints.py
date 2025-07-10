@@ -4,7 +4,7 @@ This module defines all the REST API endpoints for CSV upload,
 forecast generation, data retrieval, and health checks.
 """
 
-from datetime import datetime
+from datetime import datetime, date
 from typing import List
 from fastapi import APIRouter, HTTPException, UploadFile, File, Depends, Query
 from fastapi.responses import Response
@@ -12,7 +12,8 @@ from fastapi.responses import Response
 from app.utils.logger import app_logger
 from app.models.schemas import (
     HealthResponse, CSVUploadResponse, ForecastRequest, ForecastResponse,
-    ForecastHistoryResponse, SalesDataResponse, ErrorResponse
+    ForecastHistoryResponse, SalesDataResponse, ErrorResponse, SalesDataRow,
+    ForecastHistoryItem
 )
 from app.services.csv_service import csv_service
 from app.services.supabase_client import supabase_client
@@ -33,8 +34,11 @@ async def health_check():
     app_logger.info("Health check requested")
 
     try:
-        # Test database connection
-        supabase_client.execute_query("SELECT 1", fetch=True)
+        # Test Supabase REST API connection
+        health_ok = supabase_client.health_check()
+
+        if not health_ok:
+            raise Exception("Supabase REST API not accessible")
 
         return HealthResponse(
             status="healthy",
@@ -101,7 +105,7 @@ async def upload_csv(file: UploadFile = File(...)):
                 detail=f"CSV processing failed: {'; '.join(errors[:5])}"
             )
 
-        # Insert data into database
+        # Insert data into database via REST API
         rows_inserted = 0
         if parsed_data:
             rows_inserted = supabase_client.insert_sales_data(parsed_data)
@@ -129,7 +133,7 @@ async def upload_csv(file: UploadFile = File(...)):
         )
 
 
-@router.post("/forecast", response_model=ForecastResponse, tags=["Forecasting"])
+@router.post("/forecast", tags=["Forecasting"])
 async def generate_forecast(request: ForecastRequest):
     """Generate sales forecast for a specific SKU.
 
@@ -148,8 +152,41 @@ async def generate_forecast(request: ForecastRequest):
         # Generate forecast using forecast service
         forecast_response = await forecast_service.generate_forecast(request)
 
-        app_logger.info(f"Forecast generated successfully for SKU: {request.sku_id}")
-        return forecast_response
+                # Create frontend-compatible response structure
+        predictions_list = []
+        for pred in forecast_response.predictions:
+            prediction = {
+                "date": pred.date.isoformat() if hasattr(pred.date, 'isoformat') else str(pred.date),
+                "predicted_sales": pred.predicted_sales,
+                "confidence": pred.confidence
+            }
+            predictions_list.append(prediction)
+
+        # Create response that matches frontend expectations
+        simplified_response = {
+            "success": True,
+            "data": {
+                "sku_id": forecast_response.sku_id,
+                "forecast_period": forecast_response.forecast_period,
+                "generated_at": forecast_response.generated_at.isoformat(),
+                "predictions": predictions_list,
+                "total_predicted_sales": forecast_response.total_predicted_sales,
+                "average_confidence": forecast_response.average_confidence,
+                "model_explanation": forecast_response.model_explanation
+            },
+            # Also provide predictions at root level for backward compatibility
+            "sku_id": forecast_response.sku_id,
+            "forecast_period": forecast_response.forecast_period,
+            "generated_at": forecast_response.generated_at.isoformat(),
+            "predictions": predictions_list,
+            "total_predicted_sales": forecast_response.total_predicted_sales,
+            "average_confidence": forecast_response.average_confidence,
+            "model_explanation": forecast_response.model_explanation
+        }
+
+        app_logger.info(f"Forecast generated successfully for SKU: {request.sku_id}, predictions count: {len(predictions_list)}")
+
+        return simplified_response
 
     except Exception as e:
         app_logger.error(f"Error generating forecast: {e}")
@@ -179,16 +216,29 @@ async def get_sales_data(
     app_logger.info(f"Sales data request for SKU: {sku_id}, limit: {limit}")
 
     try:
-        # Get sales data using forecast service
-        data_response = forecast_service.get_sales_data(sku_id, limit)
+        # Get sales data from database via REST API
+        db_results = supabase_client.get_sales_data(sku_id, limit)
 
-        if data_response['total_records'] == 0:
+        # Convert to our schema format
+        sales_data = []
+        for row in db_results:
+            sales_row = SalesDataRow(
+                id=row.get("id"),
+                sku_id=row["sku_id"],
+                date=datetime.fromisoformat(row["date"]).date() if isinstance(row["date"], str) else row["date"],
+                sales_quantity=row["sales_quantity"],
+                avg_temp=row.get("avg_temp"),
+                created_at=datetime.fromisoformat(row["created_at"]) if row.get("created_at") and isinstance(row["created_at"], str) else row.get("created_at")
+            )
+            sales_data.append(sales_row)
+
+        if len(sales_data) == 0:
             app_logger.warning(f"No sales data found for SKU: {sku_id}")
 
         return SalesDataResponse(
             sku_id=sku_id,
-            data=data_response['data'],
-            total_records=data_response['total_records']
+            data=sales_data,
+            total_records=len(sales_data)
         )
 
     except Exception as e:
@@ -219,19 +269,58 @@ async def get_forecast_history(
     app_logger.info(f"Forecast history request for SKU: {sku_id}, limit: {limit}")
 
     try:
-        # Get forecast history using forecast service
-        history_response = forecast_service.get_forecast_history(sku_id, limit)
+        # Get forecast history from database via REST API
+        db_results = supabase_client.get_forecast_history(sku_id, limit)
 
-        if history_response.total_count == 0:
+        # Convert to our schema format
+        forecasts = []
+        for row in db_results:
+            forecast_item = ForecastHistoryItem(
+                id=row["id"],
+                sku_id=row["sku_id"],
+                forecast_date=datetime.fromisoformat(row["forecast_date"]).date() if isinstance(row["forecast_date"], str) else row["forecast_date"],
+                predicted_sales=row["predicted_sales"],
+                confidence_score=row.get("confidence_score"),
+                key_factors=row.get("key_factors", []),
+                created_at=datetime.fromisoformat(row["created_at"]) if isinstance(row["created_at"], str) else row["created_at"]
+            )
+            forecasts.append(forecast_item)
+
+        if len(forecasts) == 0:
             app_logger.warning(f"No forecast history found for SKU: {sku_id}")
 
-        return history_response
+        return ForecastHistoryResponse(
+            sku_id=sku_id,
+            forecasts=forecasts,
+            total_count=len(forecasts)
+        )
 
     except Exception as e:
         app_logger.error(f"Error retrieving forecast history: {e}")
         raise HTTPException(
             status_code=500,
             detail="Failed to retrieve forecast history"
+        )
+
+
+@router.get("/sku-list", tags=["Data"])
+async def get_sku_list():
+    """Get list of all available SKU IDs.
+
+    Returns:
+        List of SKU identifiers
+    """
+    app_logger.info("SKU list requested")
+
+    try:
+        sku_ids = supabase_client.get_all_sku_ids()
+        return {"sku_ids": sku_ids, "count": len(sku_ids)}
+
+    except Exception as e:
+        app_logger.error(f"Error retrieving SKU list: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to retrieve SKU list"
         )
 
 

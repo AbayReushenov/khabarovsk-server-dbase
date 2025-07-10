@@ -5,7 +5,7 @@ retrieval, GigaChat API calls, and forecast storage.
 """
 
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 
 from app.utils.logger import app_logger
@@ -42,14 +42,17 @@ class ForecastService:
             try:
                 # Parse date
                 if isinstance(pred.get('date'), str):
-                    date = datetime.strptime(pred['date'], '%Y-%m-%d')
+                    date = datetime.strptime(pred['date'], '%Y-%m-%d').date()
                 else:
-                    date = pred.get('date', datetime.now())
+                    date_value = pred.get('date', datetime.now())
+                    if hasattr(date_value, 'date'):
+                        date = date_value.date()
+                    else:
+                        date = datetime.now().date()
 
                 result = ForecastResult(
                     date=date,
-                    predicted_units=int(pred.get('predicted_units', 0)),
-                    predicted_revenue=float(pred.get('predicted_revenue', 0.0)),
+                    predicted_sales=int(pred.get('predicted_units', 0)),
                     confidence=float(pred.get('confidence', 0.8))
                 )
                 results.append(result)
@@ -100,8 +103,7 @@ class ForecastService:
                 raise ValueError("Failed to generate valid predictions")
 
             # Calculate totals and averages
-            total_predicted_units = sum(pred.predicted_units for pred in predictions)
-            total_predicted_revenue = sum(pred.predicted_revenue for pred in predictions)
+            total_predicted_sales = sum(pred.predicted_sales for pred in predictions)
             average_confidence = sum(pred.confidence for pred in predictions) / len(predictions)
 
             # Create forecast response
@@ -109,19 +111,25 @@ class ForecastService:
                 sku_id=request.sku_id,
                 forecast_period=forecast_period,
                 predictions=predictions,
-                total_predicted_units=total_predicted_units,
-                total_predicted_revenue=total_predicted_revenue,
+                total_predicted_sales=total_predicted_sales,
                 average_confidence=average_confidence,
                 model_explanation=gigachat_response.explanation
             )
 
             # Save forecast to database
+            # Convert predictions to JSON-serializable format
+            predictions_json = []
+            for pred in predictions:
+                pred_dict = pred.dict()
+                if 'date' in pred_dict:
+                    pred_dict['date'] = pred_dict['date'].isoformat() if hasattr(pred_dict['date'], 'isoformat') else str(pred_dict['date'])
+                predictions_json.append(pred_dict)
+
             forecast_data = {
                 'sku_id': request.sku_id,
                 'forecast_period': forecast_period,
-                'predictions': json.dumps([pred.dict() for pred in predictions]),
-                'total_predicted_units': total_predicted_units,
-                'total_predicted_revenue': total_predicted_revenue,
+                'predictions': json.dumps(predictions_json),
+                'total_predicted_sales': total_predicted_sales,
                 'average_confidence': average_confidence,
                 'model_explanation': gigachat_response.explanation
             }
@@ -155,32 +163,31 @@ class ForecastService:
         base_units = 3
         base_revenue = 9000.0
 
+        # Start from tomorrow
+        base_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
+
         for i in range(forecast_period):
-            prediction_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-            prediction_date = prediction_date.replace(day=prediction_date.day + i + 1)
+            prediction_date = base_date + timedelta(days=i)
 
             # Simple variation
             variation = 0.8 + (i % 3) * 0.15
 
             prediction = ForecastResult(
-                date=prediction_date,
-                predicted_units=max(1, int(base_units * variation)),
-                predicted_revenue=base_revenue * variation,
+                date=prediction_date.date(),
+                predicted_sales=max(1, int(base_units * variation)),
                 confidence=0.6  # Lower confidence for fallback
             )
             predictions.append(prediction)
 
         # Calculate totals
-        total_predicted_units = sum(pred.predicted_units for pred in predictions)
-        total_predicted_revenue = sum(pred.predicted_revenue for pred in predictions)
+        total_predicted_sales = sum(pred.predicted_sales for pred in predictions)
         average_confidence = 0.6
 
         return ForecastResponse(
             sku_id=request.sku_id,
             forecast_period=forecast_period,
             predictions=predictions,
-            total_predicted_units=total_predicted_units,
-            total_predicted_revenue=total_predicted_revenue,
+            total_predicted_sales=total_predicted_sales,
             average_confidence=average_confidence,
             model_explanation="Базовый прогноз сгенерирован системой (основная модель недоступна)"
         )

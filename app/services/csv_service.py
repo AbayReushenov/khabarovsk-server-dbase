@@ -22,12 +22,11 @@ class CSVService:
         self.required_columns = {
             'sku_id': ['sku_id', 'sku', 'product_id', 'id'],
             'date': ['date', 'sales_date', 'transaction_date'],
-            'units_sold': ['units_sold', 'quantity', 'qty', 'units'],
-            'revenue': ['revenue', 'sales', 'amount', 'total']
+            'sales_quantity': ['sales_quantity', 'units_sold', 'quantity', 'qty', 'units']
         }
 
         self.optional_columns = {
-            'weather_temp': ['weather_temp', 'temperature', 'temp'],
+            'avg_temp': ['avg_temp', 'weather_temp', 'temperature', 'temp'],
             'season': ['season', 'period', 'season_name']
         }
 
@@ -141,33 +140,23 @@ class CSVService:
                 errors.append(f"Row {row_number}: {str(e)}")
                 date = datetime.now()  # Fallback
 
-            # Parse units sold
+            # Parse sales quantity
             try:
-                units_sold = int(float(str(row[mapping['units_sold']]).replace(',', '')))
-                if units_sold < 0:
-                    errors.append(f"Row {row_number}: Units sold cannot be negative")
-                    units_sold = 0
+                sales_quantity = int(float(str(row[mapping['sales_quantity']]).replace(',', '')))
+                if sales_quantity < 0:
+                    errors.append(f"Row {row_number}: Sales quantity cannot be negative")
+                    sales_quantity = 0
             except (ValueError, TypeError):
-                errors.append(f"Row {row_number}: Invalid units sold value")
-                units_sold = 0
-
-            # Parse revenue
-            try:
-                revenue = float(str(row[mapping['revenue']]).replace(',', '').replace('$', ''))
-                if revenue < 0:
-                    errors.append(f"Row {row_number}: Revenue cannot be negative")
-                    revenue = 0.0
-            except (ValueError, TypeError):
-                errors.append(f"Row {row_number}: Invalid revenue value")
-                revenue = 0.0
+                errors.append(f"Row {row_number}: Invalid sales quantity value")
+                sales_quantity = 0
 
             # Parse optional fields
-            weather_temp = None
-            if 'weather_temp' in mapping and mapping['weather_temp'] in row:
+            avg_temp = None
+            if 'avg_temp' in mapping and mapping['avg_temp'] in row:
                 try:
-                    temp_value = row[mapping['weather_temp']]
+                    temp_value = row[mapping['avg_temp']]
                     if temp_value and str(temp_value).strip():
-                        weather_temp = float(str(temp_value).replace(',', ''))
+                        avg_temp = float(str(temp_value).replace(',', ''))
                 except (ValueError, TypeError):
                     errors.append(f"Row {row_number}: Invalid temperature value")
 
@@ -181,10 +170,8 @@ class CSVService:
             sales_row = SalesDataRow(
                 sku_id=sku_id,
                 date=date,
-                units_sold=units_sold,
-                revenue=revenue,
-                weather_temp=weather_temp,
-                season=season
+                sales_quantity=sales_quantity,
+                avg_temp=avg_temp
             )
 
             return sales_row, errors
@@ -195,8 +182,7 @@ class CSVService:
             return SalesDataRow(
                 sku_id="INVALID",
                 date=datetime.now(),
-                units_sold=0,
-                revenue=0.0
+                sales_quantity=0
             ), errors
 
     def validate_and_parse_csv(
@@ -288,11 +274,11 @@ class CSVService:
             Sample CSV content as string
         """
         sample_data = [
-            ['sku_id', 'date', 'units_sold', 'revenue', 'weather_temp', 'season'],
-            ['DOWN_JACKET_001', '2024-01-15', '5', '15000.00', '-15.5', 'winter'],
-            ['DOWN_JACKET_002', '2024-01-16', '3', '9500.00', '-12.0', 'winter'],
-            ['DOWN_JACKET_001', '2024-01-17', '7', '21000.00', '-18.2', 'winter'],
-            ['DOWN_JACKET_003', '2024-01-18', '2', '8000.00', '-10.5', 'winter'],
+            ['sku_id', 'date', 'sales_quantity', 'avg_temp'],
+            ['DOWN_JACKET_001', '2024-01-15', '5', '-15.5'],
+            ['DOWN_JACKET_002', '2024-01-16', '3', '-12.0'],
+            ['DOWN_JACKET_001', '2024-01-17', '7', '-18.2'],
+            ['DOWN_JACKET_003', '2024-01-18', '2', '-10.5'],
         ]
 
         output = io.StringIO()

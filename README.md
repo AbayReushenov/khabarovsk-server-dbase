@@ -47,7 +47,7 @@ This is the backend API server for the Khabarovsk Forecast Buddy system. It prov
 
 ```bash
 # Linux/Mac - автоматический запуск всего проекта
-./start-dev.sh
+``./start-dev.sh``
 
 # Windows - автоматический запуск всего проекта
 start-dev.bat
