@@ -4,12 +4,17 @@
 [![Python](https://img.shields.io/badge/Python-3.11-3776ab.svg?style=flat&logo=python)](https://python.org)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e.svg?style=flat&logo=supabase)](https://supabase.com)
 [![GigaChat](https://img.shields.io/badge/GigaChat-AI-00d4aa.svg?style=flat)](https://developers.sber.ru/portal/products/gigachat)
+[![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **AI-powered sales forecasting system for down jackets in Khabarovsk**
 
-🔗 **Related Repositories:**
-- **Frontend (React)**: [habarovsk-forecast-buddy](../habarovsk-forecast-buddy) - React TypeScript UI
-- **Backend (FastAPI)**: [khabarovsk-server-dbase](../khabarovsk-server-dbase) - *This repository*
+## 🤝 Joint Project Components
+
+This backend API is part of a **collaborative full-stack project** consisting of:
+
+- **🖥️ Frontend (React)**: [habarovsk-forecast-buddy](https://github.com/AbayReushenov/habarovsk-forecast-buddy) - React TypeScript UI
+- **⚙️ Backend (FastAPI)**: [khabarovsk-server-dbase](https://github.com/AbayReushenov/khabarovsk-server-dbase) - *This repository*
+- **🌐 Live Demo**: [habarovsk-forecast-buddy.lovable.app](https://habarovsk-forecast-buddy.lovable.app/)
 
 ## 🎯 Overview
 
@@ -46,7 +51,7 @@ This is the backend API server for the Khabarovsk Forecast Buddy system. It prov
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/khabarovsk-server-dbase.git
+git clone https://github.com/AbayReushenov/khabarovsk-server-dbase.git
 cd khabarovsk-server-dbase
 ```
 
@@ -252,9 +257,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🆘 Support
 
-- **GitHub Issues**: [Report bugs](https://github.com/your-username/khabarovsk-server-dbase/issues)
+- **GitHub Issues**: [Report bugs](https://github.com/AbayReushenov/khabarovsk-server-dbase/issues)
+- **Frontend Issues**: [Frontend bugs](https://github.com/AbayReushenov/habarovsk-forecast-buddy/issues)
+- **Live Demo**: [habarovsk-forecast-buddy.lovable.app](https://habarovsk-forecast-buddy.lovable.app/)
 - **GigaChat Support**: gigachat@sberbank.ru
-- **Documentation**: [Project Wiki](https://github.com/your-username/khabarovsk-server-dbase/wiki)
+- **Documentation**: [Project Wiki](https://github.com/AbayReushenov/khabarovsk-server-dbase/wiki)
 
 ## 🙏 Acknowledgments
 
