@@ -122,14 +122,23 @@ GIGACHAT_SCOPE=GIGACHAT_API_PERS
 
 #### Supabase Database:
 
+**📖 Подробная инструкция**: [SUPABASE_SETUP.md](SUPABASE_SETUP.md)
+
+**Краткий процесс**:
 1. Создаем проект на [supabase.com](https://supabase.com)
-2. Копируем данные из Settings → API
-3. Заполняем в .env:
+2. Выполняем SQL скрипт `supabase_schema.sql` в SQL Editor
+3. Копируем данные из Settings → API
+4. Заполняем в .env:
 
 ```bash
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your_anon_key
 SUPABASE_SERVICE_KEY=your_service_key
+```
+
+**Тестирование**:
+```bash
+python test_database.py
 ```
 
 ## 🚀 Запуск разработки
