@@ -1,29 +1,28 @@
-# 🏔️ Khabarovsk Forecast Buddy - Frontend
+# 🏔️ Khabarovsk Forecast Buddy - Backend API
 
-[![React](https://img.shields.io/badge/React-18.0-61dafb.svg?style=flat&logo=react)](https://reactjs.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178c6.svg?style=flat&logo=typescript)](https://www.typescriptlang.org)
-[![Vite](https://img.shields.io/badge/Vite-5.0-646cff.svg?style=flat&logo=vite)](https://vitejs.dev)
-[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-06b6d4.svg?style=flat&logo=tailwindcss)](https://tailwindcss.com)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.104.1-009688.svg?style=flat&logo=FastAPI)](https://fastapi.tiangolo.com)
+[![Python](https://img.shields.io/badge/Python-3.11-3776ab.svg?style=flat&logo=python)](https://python.org)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e.svg?style=flat&logo=supabase)](https://supabase.com)
+[![GigaChat](https://img.shields.io/badge/GigaChat-AI-00d4aa.svg?style=flat)](https://developers.sber.ru/portal/products/gigachat)
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **AI-powered sales forecasting system for down jackets in Khabarovsk**
 
 ## 🤝 Joint Project Components
 
-This frontend application is part of a **collaborative full-stack project** consisting of:
+This backend API is part of a **collaborative full-stack project** consisting of:
 
-- **🖥️ Frontend (React)**: [habarovsk-forecast-buddy](https://github.com/AbayReushenov/habarovsk-forecast-buddy) - *This repository*
-- **⚙️ Backend (FastAPI)**: [khabarovsk-server-dbase](https://github.com/AbayReushenov/khabarovsk-server-dbase) - API server
+- **🖥️ Frontend (React)**: [habarovsk-forecast-buddy](https://github.com/AbayReushenov/habarovsk-forecast-buddy) - React TypeScript UI
+- **⚙️ Backend (FastAPI)**: [khabarovsk-server-dbase](https://github.com/AbayReushenov/khabarovsk-server-dbase) - *This repository*
 - **🌐 Live Demo**: [habarovsk-forecast-buddy.lovable.app](https://habarovsk-forecast-buddy.lovable.app/)
 
 ## 🎯 Overview
 
-This is the frontend React application for the Khabarovsk Forecast Buddy system. It provides:
-- 📊 Interactive data visualization
-- 📁 CSV file upload interface
-- 📈 AI-powered forecast display
-- 🎨 Modern, responsive UI
-- 🔄 Real-time API integration
+This is the backend API server for the Khabarovsk Forecast Buddy system. It provides:
+- 📊 Sales data processing and storage
+- 🤖 AI-powered forecast generation using GigaChat
+- 📈 Historical data analysis
+- 🔄 REST API for frontend integration
 
 ## 🏗️ Architecture
 
@@ -42,69 +41,78 @@ This is the frontend React application for the Khabarovsk Forecast Buddy system.
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### 💡 Development (одной командой):
 
-- Node.js 18+
-- npm or yarn
-- Backend API running (see setup below)
-
-### 1. Clone the Repository
+Запустить **полную систему** (frontend + backend) одной командой:
 
 ```bash
-git clone https://github.com/AbayReushenov/habarovsk-forecast-buddy.git
-cd habarovsk-forecast-buddy
+# Linux/Mac - автоматический запуск всего проекта
+./start-dev.sh
+
+# Windows - автоматический запуск всего проекта
+start-dev.bat
 ```
 
-### 2. Backend Setup (Required)
+**Результат**:
+- 📱 Frontend: http://localhost:8080
+- ⚙️ Backend: http://localhost:8000
+- 📚 API Docs: http://localhost:8000/docs
 
-This frontend requires the backend API to be running. Set up the backend first:
+📖 **Полная документация разработки**: [DEV_SETUP.md](DEV_SETUP.md)
+
+### 🐳 Production Deployment
+
+#### Prerequisites
+
+- Python 3.11+
+- Docker (optional)
+- GigaChat API credentials
+- Supabase account (optional)
+
+#### 1. Clone the Repository
 
 ```bash
-# In a separate terminal
 git clone https://github.com/AbayReushenov/khabarovsk-server-dbase.git
 cd khabarovsk-server-dbase
-# Follow backend setup instructions
+```
+
+#### 2. Environment Configuration
+
+```bash
+# Copy configuration template
+cp .env.example .env
+
+# Edit with your settings
+nano .env
+```
+
+#### 3. Installation
+
+```bash
+# Create virtual environment
 python -m venv venv
-source venv/bin/activate
+source venv/bin/activate  # Linux/Mac
+# venv\Scripts\activate   # Windows
+
+# Install dependencies
 pip install -r requirements.txt
+```
+
+#### 4. Run the Server
+
+```bash
+# Development server with auto-reload
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Production server
+uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-### 3. Install Dependencies
+#### 5. Access the API
 
-```bash
-# Using npm
-npm install
-
-# Or using yarn
-yarn install
-```
-
-### 4. Configure Environment
-
-Create a `.env` file:
-
-```bash
-# API Configuration
-VITE_API_BASE_URL=http://localhost:8000
-VITE_ENVIRONMENT=development
-```
-
-### 5. Run the Application
-
-```bash
-# Development server
-npm run dev
-
-# Or with yarn
-yarn dev
-```
-
-### 6. Access the Application
-
-- **Frontend App**: http://localhost:8080
-- **Backend API Docs**: http://localhost:8000/docs
-- **Live Demo**: [habarovsk-forecast-buddy.lovable.app](https://habarovsk-forecast-buddy.lovable.app/)
+- **Backend API**: http://localhost:8000
+- **API Documentation**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/api/v1/health
 
 ## 🔗 Integration with Backend
 
