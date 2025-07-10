@@ -8,6 +8,7 @@ import json
 import os
 import base64
 import requests
+import urllib3
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 import asyncio
@@ -18,6 +19,9 @@ from app.models.schemas import GigaChatResponse, ForecastResult
 
 # Load environment variables
 load_dotenv()
+
+# Disable SSL warnings (similar to rejectUnauthorized: false in Node.js)
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class GigaChatService:
@@ -53,6 +57,10 @@ class GigaChatService:
         self._access_token = None
         self._token_expires_at = None
 
+        # Create session with SSL verification disabled
+        self.session = requests.Session()
+        self.session.verify = False
+
     def _get_access_token(self) -> str:
         """Get OAuth access token for GigaChat API."""
         if self.legacy_credentials:
@@ -68,13 +76,17 @@ class GigaChatService:
             if self.client_auth_key:
                 # Use pre-encoded auth key
                 auth_string = self.client_auth_key
+                app_logger.info("Using pre-encoded auth key")
             else:
                 # Encode client_id:client_secret
                 auth_string = base64.b64encode(f"{self.client_id}:{self.client_secret}".encode()).decode()
+                app_logger.info("Using client_id:client_secret encoding")
 
             headers = {
                 "Authorization": f"Basic {auth_string}",
-                "Content-Type": "application/x-www-form-urlencoded"
+                "Content-Type": "application/x-www-form-urlencoded",
+                "RqUID": f"forecast-{int(datetime.now().timestamp())}",
+                "Accept": "application/json"
             }
 
             data = {
@@ -83,8 +95,46 @@ class GigaChatService:
             }
 
             app_logger.info("Requesting new GigaChat access token")
-            response = requests.post(self.auth_url, headers=headers, data=data, verify=False)
-            response.raise_for_status()
+            app_logger.debug(f"Auth URL: {self.auth_url}")
+            app_logger.debug(f"Scope: {self.scope}")
+            app_logger.debug(f"Grant Type: {data['grant_type']}")
+
+            # Add retry logic for rate limiting
+            max_retries = 3
+            retry_delay = 2
+
+            for attempt in range(max_retries):
+                try:
+                    response = self.session.post(self.auth_url, headers=headers, data=data, timeout=60)
+
+                    app_logger.debug(f"Token response status: {response.status_code}")
+                    app_logger.debug(f"Token response headers: {dict(response.headers)}")
+
+                    if response.status_code == 429:
+                        if attempt < max_retries - 1:
+                            app_logger.warning(f"Rate limited, retrying in {retry_delay} seconds... (attempt {attempt + 1}/{max_retries})")
+                            import time
+                            time.sleep(retry_delay)
+                            retry_delay *= 2  # Exponential backoff
+                            continue
+                        else:
+                            app_logger.error("Rate limit exceeded, no more retries")
+
+                    if response.status_code != 200:
+                        app_logger.error(f"Token request failed: {response.status_code} - {response.text}")
+
+                    response.raise_for_status()
+                    break
+
+                except requests.exceptions.RequestException as e:
+                    if attempt < max_retries - 1:
+                        app_logger.warning(f"Request failed, retrying... (attempt {attempt + 1}/{max_retries}): {e}")
+                        import time
+                        time.sleep(retry_delay)
+                        retry_delay *= 2
+                        continue
+                    else:
+                        raise
 
             token_data = response.json()
             self._access_token = token_data["access_token"]
@@ -98,6 +148,7 @@ class GigaChatService:
 
         except Exception as e:
             app_logger.error(f"Failed to get GigaChat access token: {e}")
+            app_logger.debug(f"Exception details: {type(e).__name__}: {str(e)}")
             raise
 
     def _build_forecast_prompt(
@@ -209,11 +260,11 @@ SKU: {sku_id}
                 "temperature": 0.1
             }
 
-            response = requests.post(
+            response = self.session.post(
                 f"{self.base_url}/chat/completions",
                 headers=headers,
                 json=payload,
-                verify=False
+                timeout=60
             )
             response.raise_for_status()
 
