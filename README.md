@@ -1,45 +1,37 @@
-# 🔮 Khabarovsk Forecast Buddy
+# 🏔️ Khabarovsk Forecast Buddy - Backend API
 
-**AI-powered sales forecasting system for down jackets in Khabarovsk using GigaChat API**
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.104.1-009688.svg?style=flat&logo=FastAPI)](https://fastapi.tiangolo.com)
+[![Python](https://img.shields.io/badge/Python-3.11-3776ab.svg?style=flat&logo=python)](https://python.org)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e.svg?style=flat&logo=supabase)](https://supabase.com)
+[![GigaChat](https://img.shields.io/badge/GigaChat-AI-00d4aa.svg?style=flat)](https://developers.sber.ru/portal/products/gigachat)
 
-[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com)
-[![GigaChat](https://img.shields.io/badge/GigaChat-API-orange.svg)](https://developers.sber.ru/portal/products/gigachat-api)
-[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://docker.com)
+**AI-powered sales forecasting system for down jackets in Khabarovsk**
+
+🔗 **Related Repositories:**
+- **Frontend (React)**: [habarovsk-forecast-buddy](../habarovsk-forecast-buddy) - React TypeScript UI
+- **Backend (FastAPI)**: [khabarovsk-server-dbase](../khabarovsk-server-dbase) - *This repository*
 
 ## 🎯 Overview
 
-Khabarovsk Forecast Buddy is an intelligent sales forecasting system specifically designed for down jacket retailers in Khabarovsk. The system leverages Russian AI technology (GigaChat by Sber) combined with historical sales data to generate accurate sales predictions for 7, 14, or 30-day periods.
-
-### ✨ Key Features
-
-- 🤖 **AI-Powered Forecasting**: Integration with GigaChat API for intelligent predictions
-- 📊 **Multiple Forecast Periods**: 7, 14, and 30-day forecasts
-- 🌡️ **Weather-Aware**: Considers temperature and seasonal factors
-- 📁 **CSV Data Import**: Easy historical data upload
-- 🗄️ **PostgreSQL Integration**: Supabase database for data persistence
-- 🐳 **Docker Ready**: Containerized for easy deployment
-- 🚀 **Production Ready**: CI/CD pipeline with GitHub Actions
-- 📈 **RESTful API**: Complete API documentation with OpenAPI/Swagger
+This is the backend API server for the Khabarovsk Forecast Buddy system. It provides:
+- 📊 Sales data processing and storage
+- 🤖 AI-powered forecast generation using GigaChat
+- 📈 Historical data analysis
+- 🔄 REST API for frontend integration
 
 ## 🏗️ Architecture
 
 ```
-📁 Project Structure
-├── 🐍 app/                    # Main application
-│   ├── api/endpoints.py       # REST API endpoints
-│   ├── models/schemas.py      # Pydantic data models
-│   ├── services/              # Business logic services
-│   │   ├── gigachat_service.py    # GigaChat AI integration
-│   │   ├── supabase_client.py     # Database client
-│   │   ├── csv_service.py         # CSV processing
-│   │   └── forecast_service.py    # Forecast coordination
-│   ├── utils/logger.py        # Logging configuration
-│   └── main.py               # FastAPI application
-├── 🧪 tests/                 # Automated tests
-├── 🐳 Dockerfile             # Container definition
-├── ⚙️ .github/workflows/      # CI/CD pipeline
-└── 📚 docs/                  # Documentation
+┌─────────────────┐    HTTP/REST    ┌──────────────────┐
+│   React App     │ ◄──────────────► │   FastAPI Server │
+│  (Frontend)     │                 │   (This repo)    │
+└─────────────────┘                 └──────────────────┘
+                                            │
+                                            ▼
+                                    ┌──────────────────┐
+                                    │  Supabase DB     │
+                                    │  + GigaChat AI   │
+                                    └──────────────────┘
 ```
 
 ## 🚀 Quick Start
