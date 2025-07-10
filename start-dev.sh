@@ -121,7 +121,7 @@ echo -e "${BLUE}🚀 Starting Backend (FastAPI)...${NC}"
 echo -e "${YELLOW}   URL: http://localhost:$BACKEND_PORT${NC}"
 echo -e "${YELLOW}   API Docs: http://localhost:$BACKEND_PORT/docs${NC}"
 
-uvicorn app.main:app --reload --host 0.0.0.0 --port $BACKEND_PORT > backend.log 2>&1 &
+ENVIRONMENT=test uvicorn app.main:app --reload --host 0.0.0.0 --port $BACKEND_PORT > backend.log 2>&1 &
 BACKEND_PID=$!
 
 # Wait a moment for backend to start
