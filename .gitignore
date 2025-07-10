@@ -129,6 +129,7 @@ dmypy.json
 .pyre/
 
 # FastAPI specific
+.env
 .env.local
 .env.development
 .env.test
