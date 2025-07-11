@@ -6,6 +6,7 @@ It sets up structured logging with appropriate levels and formatting.
 
 import logging
 import sys
+import os
 from typing import Optional
 
 
@@ -50,5 +51,7 @@ def setup_logger(
     return logger
 
 
-# Default application logger
-app_logger = setup_logger("habarovsk_forecast_buddy")
+# Default application logger (level can be overridden via LOG_LEVEL env var)
+DEFAULT_LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+
+app_logger = setup_logger("habarovsk_forecast_buddy", level=DEFAULT_LOG_LEVEL)

@@ -53,7 +53,12 @@ class ForecastService:
                 result = ForecastResult(
                     date=date,
                     predicted_sales=int(pred.get('predicted_units', 0)),
-                    confidence=float(pred.get('confidence', 0.8))
+                    confidence=float(pred.get('confidence', 0.8)),
+                    predicted_temp=(
+                        float(pred.get('predicted_temp'))
+                        if pred.get('predicted_temp') is not None and str(pred.get('predicted_temp')).strip() != ""
+                        else None
+                    )
                 )
                 results.append(result)
 
@@ -75,6 +80,7 @@ class ForecastService:
         app_logger.info(f"Generating forecast for SKU: {request.sku_id}, period: {request.period}")
 
         try:
+            app_logger.info(f"GigaChat mode: {'mock' if gigachat_service.mock_mode else 'real'}")
             # Get historical sales data
             historical_data = supabase_client.get_sales_data(
                 sku_id=request.sku_id,
@@ -98,6 +104,20 @@ class ForecastService:
                 gigachat_response.predictions
             )
 
+            # Fallback temperature generation if GigaChat did not provide it
+            if any(pred.predicted_temp is None for pred in predictions):
+                # Base temperature: use last historical avg_temp or default -15°C
+                base_temp = -15.0
+                for row in historical_data:
+                    if row.get("avg_temp") is not None:
+                        base_temp = float(row["avg_temp"])
+                        break
+
+                for idx, pred in enumerate(predictions):
+                    if pred.predicted_temp is None:
+                        # Simple seasonal assumption: gradual warming
+                        pred.predicted_temp = round(base_temp + idx * 0.5, 1)
+
             if not predictions:
                 app_logger.error("No valid predictions generated")
                 raise ValueError("Failed to generate valid predictions")
@@ -113,7 +133,8 @@ class ForecastService:
                 predictions=predictions,
                 total_predicted_sales=total_predicted_sales,
                 average_confidence=average_confidence,
-                model_explanation=gigachat_response.explanation
+                model_explanation=gigachat_response.explanation,
+                generated_by_gigachat=not gigachat_service.mock_mode
             )
 
             # Save forecast to database
@@ -123,6 +144,7 @@ class ForecastService:
                 pred_dict = pred.dict()
                 if 'date' in pred_dict:
                     pred_dict['date'] = pred_dict['date'].isoformat() if hasattr(pred_dict['date'], 'isoformat') else str(pred_dict['date'])
+                # Ensure predicted_temp serialized even if None is now filled
                 predictions_json.append(pred_dict)
 
             forecast_data = {
@@ -136,6 +158,11 @@ class ForecastService:
 
             forecast_id = supabase_client.insert_forecast(forecast_data)
             app_logger.info(f"Forecast saved with ID: {forecast_id}")
+
+            # Log first 3 predictions after all processing (including temp fallback)
+            if predictions:
+                sample_preds = predictions[:3]
+                app_logger.debug(f"Sample predictions: {[p.dict() for p in sample_preds]}")
 
             return forecast_response
 
@@ -189,7 +216,8 @@ class ForecastService:
             predictions=predictions,
             total_predicted_sales=total_predicted_sales,
             average_confidence=average_confidence,
-            model_explanation="Базовый прогноз сгенерирован системой (основная модель недоступна)"
+            model_explanation="Базовый прогноз сгенерирован системой (основная модель недоступна)",
+            generated_by_gigachat=False
         )
 
     def get_forecast_history(self, sku_id: str, limit: int = 10) -> ForecastHistoryResponse:

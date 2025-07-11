@@ -56,6 +56,7 @@ class ForecastResult(BaseModel):
     date: date
     predicted_sales: int
     confidence: float
+    predicted_temp: Optional[float] = None  # New: forecasted average temperature
 
 
 class ForecastResponse(BaseModel):
@@ -69,6 +70,7 @@ class ForecastResponse(BaseModel):
     total_predicted_sales: int
     average_confidence: float
     model_explanation: Optional[str] = None
+    generated_by_gigachat: bool = True  # True if main GigaChat model used, False if fallback/mock
 
 
 class ForecastHistoryItem(BaseModel):

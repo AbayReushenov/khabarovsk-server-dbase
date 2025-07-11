@@ -160,6 +160,8 @@ async def generate_forecast(request: ForecastRequest):
                 "predicted_sales": pred.predicted_sales,
                 "confidence": pred.confidence
             }
+            if getattr(pred, "predicted_temp", None) is not None:
+                prediction["predicted_temp"] = pred.predicted_temp
             predictions_list.append(prediction)
 
         # Create response that matches frontend expectations
@@ -183,7 +185,8 @@ async def generate_forecast(request: ForecastRequest):
             "forecast": predictions_list,  # For useApi.ts
             "total_predicted_sales": forecast_response.total_predicted_sales,
             "average_confidence": forecast_response.average_confidence,
-            "model_explanation": forecast_response.model_explanation
+            "model_explanation": forecast_response.model_explanation,
+            "generated_by_gigachat": forecast_response.generated_by_gigachat
         }
 
         app_logger.info(f"Forecast generated successfully for SKU: {request.sku_id}, predictions count: {len(predictions_list)}")

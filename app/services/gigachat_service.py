@@ -335,6 +335,8 @@ SKU: {sku_id}
             variation = 0.8 + (i % 3) * 0.15  # Vary between 0.8 and 1.1
             predicted_units = max(1, int(avg_units * variation))
             predicted_revenue = avg_revenue * variation
+            # Simple sinusoidal mock temperature: colder at start, warmer later
+            predicted_temp = round(-20 + 15 * (i / max(forecast_period - 1, 1)), 1)
             confidence = 0.75 + (i % 2) * 0.1  # Vary between 0.75 and 0.85
 
             forecast_date = datetime.now() + timedelta(days=i + 1)
@@ -343,6 +345,7 @@ SKU: {sku_id}
                 "date": forecast_date.strftime("%Y-%m-%d"),
                 "predicted_units": predicted_units,
                 "predicted_revenue": round(predicted_revenue, 2),
+                "predicted_temp": predicted_temp,
                 "confidence": round(confidence, 2)
             })
             confidence_scores.append(confidence)
