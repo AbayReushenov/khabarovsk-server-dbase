@@ -16,8 +16,8 @@ from app.api.endpoints import router
 from app.models.schemas import ErrorResponse
 
 
-# Load environment variables
-load_dotenv()
+# Load environment variables (allow .env to override existing env vars)
+load_dotenv(override=True)
 
 
 @asynccontextmanager
