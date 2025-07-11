@@ -152,7 +152,7 @@ async def generate_forecast(request: ForecastRequest):
         # Generate forecast using forecast service
         forecast_response = await forecast_service.generate_forecast(request)
 
-                # Create frontend-compatible response structure
+        # Create frontend-compatible response structure
         predictions_list = []
         for pred in forecast_response.predictions:
             prediction = {
@@ -169,16 +169,18 @@ async def generate_forecast(request: ForecastRequest):
                 "sku_id": forecast_response.sku_id,
                 "forecast_period": forecast_response.forecast_period,
                 "generated_at": forecast_response.generated_at.isoformat(),
-                "predictions": predictions_list,
+                "predictions": predictions_list,  # For Index.tsx
+                "forecast": predictions_list,  # For useApi.ts
                 "total_predicted_sales": forecast_response.total_predicted_sales,
                 "average_confidence": forecast_response.average_confidence,
                 "model_explanation": forecast_response.model_explanation
             },
-            # Also provide predictions at root level for backward compatibility
+            # Also provide forecast at root level for backward compatibility
             "sku_id": forecast_response.sku_id,
             "forecast_period": forecast_response.forecast_period,
             "generated_at": forecast_response.generated_at.isoformat(),
-            "predictions": predictions_list,
+            "predictions": predictions_list,  # For Index.tsx
+            "forecast": predictions_list,  # For useApi.ts
             "total_predicted_sales": forecast_response.total_predicted_sales,
             "average_confidence": forecast_response.average_confidence,
             "model_explanation": forecast_response.model_explanation
