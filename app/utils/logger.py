@@ -33,20 +33,12 @@ def setup_logger(
 
     # Create logger
     logger = logging.getLogger(name)
-    logger.setLevel(getattr(logging, level.upper()))
-
-    # Avoid adding handlers multiple times
-    if not logger.handlers:
-        # Create console handler
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(getattr(logging, level.upper()))
-
-        # Create formatter
-        formatter = logging.Formatter(format_string)
-        handler.setFormatter(formatter)
-
-        # Add handler to logger
-        logger.addHandler(handler)
+    # Отключаем все логи: уровень выше CRITICAL и удаляем обработчики
+    logger.setLevel(logging.CRITICAL + 1)
+    logger.propagate = False
+    # Удаляем все обработчики
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
 
     return logger
 
